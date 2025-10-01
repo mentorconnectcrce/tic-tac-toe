@@ -2,6 +2,7 @@ import React from 'react'
 import calculateWinner from './helpers/calculateWinner'
 import Board from './components/board/Board'
 import GameInfo from './components/game-info/GameInfo'
+import { triggerWinnerCelebration } from './utils/confetti'
 
 class Game extends React.Component {
   constructor(props) {
@@ -9,10 +10,20 @@ class Game extends React.Component {
     // Generate 10 blocks with more strategic distribution (5 X and 5 O shuffled)
     const generateBalancedBlocks = () => {
       const blocks = ['X', 'X', 'X', 'X', 'X', 'O', 'O', 'O', 'O', 'O']
-      // Fisher-Yates shuffle for true randomness
-      for (let i = blocks.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
+      // Enhanced Fisher-Yates shuffle with multiple passes for better randomness
+      // Seed randomness with timestamp to ensure different patterns each game
+      const seed = Date.now() * Math.random()
+      
+      // Perform multiple shuffle passes for truly random distribution
+      const shufflePasses = 3 + Math.floor(Math.random() * 3) // 3-5 passes
+      
+      for (let pass = 0; pass < shufflePasses; pass++) {
+        for (let i = blocks.length - 1; i > 0; i--) {
+          // Use multiple random sources for better entropy
+          const randomFactor = Math.sin(seed + i + pass) * 10000
+          const j = Math.floor((Math.random() + Math.abs(randomFactor % 1)) / 2 * (i + 1))
+          ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
+        }
       }
       return blocks
     }
@@ -65,6 +76,9 @@ class Game extends React.Component {
     // Place the revealed symbol
     squares[i] = this.state.currentSymbol
     
+    // Check if this move wins the game
+    const winner = calculateWinner(squares)
+    
     this.setState({
       history: history.concat([
         {
@@ -76,6 +90,13 @@ class Game extends React.Component {
       fromFront: !this.state.fromFront, // Alternate for next turn
       currentSymbol: null, // Reset for next turn
     })
+    
+    // Trigger confetti celebration if there's a winner
+    if (winner) {
+      setTimeout(() => {
+        triggerWinnerCelebration()
+      }, 100)
+    }
   }
   
   handleBlockReveal(isFromFront) {
@@ -117,9 +138,16 @@ class Game extends React.Component {
     if (step === 0) {
       const generateBalancedBlocks = () => {
         const blocks = ['X', 'X', 'X', 'X', 'X', 'O', 'O', 'O', 'O', 'O']
-        for (let i = blocks.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1))
-          ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
+        // Enhanced Fisher-Yates shuffle with multiple passes for better randomness
+        const seed = Date.now() * Math.random()
+        const shufflePasses = 3 + Math.floor(Math.random() * 3)
+        
+        for (let pass = 0; pass < shufflePasses; pass++) {
+          for (let i = blocks.length - 1; i > 0; i--) {
+            const randomFactor = Math.sin(seed + i + pass) * 10000
+            const j = Math.floor((Math.random() + Math.abs(randomFactor % 1)) / 2 * (i + 1))
+            ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
+          }
         }
         return blocks
       }
@@ -166,7 +194,7 @@ class Game extends React.Component {
     return (
       <React.Fragment>
         <div className="navbar">
-          <h1>Tic Tac Toe</h1>
+          <h1>TwistTacToe</h1>
           <button className="info-button" onClick={this.toggleRules} title="Game Rules" aria-label="Open game rules">
             <span className="info-icon">i</span>
           </button>
@@ -204,7 +232,7 @@ class Game extends React.Component {
                   <span className="rule-number">3</span>
                   <div>
                     <h3>Place on Board</h3>
-                    <p>After revealing, place that symbol on the tic-tac-toe board</p>
+                    <p>After revealing, place that symbol on the TwistTacToe board</p>
                   </div>
                 </div>
                 <div className="rule-item">
@@ -236,13 +264,12 @@ class Game extends React.Component {
           </section>
           <div className="blocks-container">
             <h4>Hidden Blocks: {availableBlocks} remaining</h4>
-            {!currentSymbol && !winner && availableBlocks > 0 && (
-              <p className="instruction-text">
-                {this.state.fromFront ? 
-                  'Click on the FIRST hidden block to reveal it!' : 
-                  'Click on the LAST hidden block to reveal it!'}
-              </p>
-            )}
+            {/* Instruction text always present to reserve layout space; visibility toggled via CSS */}
+            <p className={`instruction-text ${(!currentSymbol && !winner && availableBlocks > 0) ? 'visible' : 'hidden'}`}>
+              {this.state.fromFront ?
+                'Click on the FIRST hidden block to reveal it!' :
+                'Click on the LAST hidden block to reveal it!'}
+            </p>
             <div className="blocks-deque">
               {this.state.blocks.map((block, index) => {
                 const isRevealed = this.state.revealedIndices.includes(index)

@@ -194,7 +194,23 @@ h1 {
   font-size: 0.7rem;
   font-weight: bold;
   margin-bottom: 0.25rem;
+  /* Reserve a fixed layout height to avoid shifting when instruction toggles */
+  min-height: 1.2rem;
+  line-height: 1.2rem;
+  display: block;
+  transition: opacity 0.2s ease, transform 0.18s ease;
   animation: pulse 1.5s ease-in-out infinite;
+}
+
+.instruction-text.hidden {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+.instruction-text.visible {
+  opacity: 1;
+  transform: none;
 }
 
 @keyframes pulse {
@@ -335,7 +351,7 @@ h1 {
 }
 
 .game-info {
-  position: absolute;
+  position: relative;
 }
 
 .game-information {

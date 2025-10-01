@@ -89,7 +89,7 @@ main {
 .navbar {
   width: 100%;
   background-color: #16497c;
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -100,7 +100,7 @@ main {
 h1 {
   font-family: var(--game-font);
   color: var(--white);
-  font-size: 3vw;
+  font-size: 2vw;
   letter-spacing: 1px;
   padding: 0;
   margin: 0;
@@ -112,17 +112,111 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex: 1;
   width: 100%;
-  padding: 2rem 0;
+  padding: 0.3rem 0 0.5rem 0;
+  overflow-y: auto;
 }
+
+.blocks-container {
+  margin-top: 0.3rem;
+  margin-bottom: 0.2rem;
+  text-align: center;
+  padding: 0.3rem 0.6rem;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  max-width: 700px;
+  width: 95%;
+}
+
+.blocks-container h4 {
+  font-family: var(--game-font);
+  color: var(--dark-purple);
+  font-size: 0.75rem;
+  margin-bottom: 0.3rem;
+}
+
+.instruction-text {
+  font-family: var(--speech-font);
+  color: var(--dark-blue);
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.blocks-deque {
+  display: flex;
+  gap: 0.2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.block {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--game-font);
+  font-size: 0.9rem;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.block.hidden {
+  background-color: var(--dark-purple);
+  color: var(--white);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.block.revealed {
+  background-color: var(--white);
+  color: var(--dark-purple);
+  border: 3px solid var(--dark-blue);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.block.clickable {
+  cursor: pointer;
+  background-color: var(--dark-blue);
+  animation: glow 1.5s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(42, 118, 180, 0.6);
+}
+
+.block.clickable:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(42, 118, 180, 0.9);
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(42, 118, 180, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(42, 118, 180, 1);
+  }
+}
+
 .game-board {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 25px;
+  padding: 15px;
   font-size: 30px;
   font-weight: bold;
   color: var(--white);
@@ -135,18 +229,19 @@ h1 {
 .game-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
 }
 .restart {
   background-color: transparent;
-  padding: 0.5rem 4rem;
+  padding: 0.4rem 3rem;
   cursor: pointer;
   border: 1px solid var(--dark-purple);
   background-color: var(--dark-purple);
   color: var(--white);
   font-family: var(--speech-font);
   font-weight: 400;
+  font-size: 0.9rem;
   border-radius: 5px;
   transition: all ease-in-out 0.3s;
 }
@@ -156,18 +251,18 @@ h1 {
 
 .square {
   background: var(--white);
-  border: 10px solid var(--dark-purple);
+  border: 5px solid var(--dark-purple);
   cursor: pointer;
   float: left;
-  font-size: 6vw;
+  font-size: 4vw;
   font-weight: bold;
-  line-height: 34px;
-  height: 6.5rem;
+  line-height: 24px;
+  height: 3.5rem;
   margin-right: -1px;
   margin-top: -1px;
   padding: 0;
   text-align: center;
-  width: 6.5rem;
+  width: 3.5rem;
   color: var(--dark-purple);
   font-family: var(--game-font);
 }
@@ -179,21 +274,13 @@ h1 {
 .game {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  max-width: 1200px;
+  max-width: 1000px;
   width: 100%;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  min-height: 450px;
-  gap: 2rem;
-}
-
-.game img {
-  max-width: 28rem;
-  width: 100%;
-  position: relative;
-  object-fit: contain;
-  min-width: 18rem;
-  margin: 0 auto;
+  min-height: auto;
+  gap: 1rem;
+  padding: 0.3rem;
 }
 
 .game-info {
@@ -205,59 +292,105 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 350px;
+  min-height: 50px;
+  justify-content: center;
+  padding: 0.3rem;
+}
+
+.player-turn-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.player-badges {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
   justify-content: center;
 }
 
-.player-x {
-  margin-left: 3rem;
+.player-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem 0.7rem;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  opacity: 0.5;
 }
 
-.player-o {
-  margin-left: 23rem;
-  margin-top: -3rem;
+.player-badge.active {
+  opacity: 1;
+  border-color: var(--dark-blue);
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 15px rgba(42, 118, 180, 0.5);
+  transform: scale(1.05);
 }
 
-.player-x,
-.player-o {
-  position: absolute;
-  z-index: 999;
-  transform: translatey(0px);
-  -webkit-animation: float 5s ease-in-out infinite;
-  animation: float 5s ease-in-out infinite;
-  mix-blend-mode: multiply;
-  text-align: center;
-  letter-spacing: 1px;
+.player-symbol {
+  font-family: var(--game-font);
+  font-size: 1.4rem;
   color: var(--dark-purple);
-  padding: 0.75rem 2.5rem;
-  border-radius: 11px;
-  width: max-content;
-  box-shadow: 15px 15px var(--dark-blue);
-  font-size: 2vw;
-  background-color: var(--light-grey);
-  font-family: var(--speech-font);
+  font-weight: bold;
+  line-height: 1;
 }
 
-.player-x:after,
-.player-o:after {
-  z-index: 999;
-  transform: translatey(0px);
-  -webkit-animation: float2 5s ease-in-out infinite;
-  animation: float2 5s ease-in-out infinite;
-  content: ".";
-  text-align: left;
-  font-size: 8vw;
-  width: 45px;
-  height: 11px;
-  line-height: 30px;
-  border-radius: 11px;
-  background-color: var(--light-grey);
-  position: absolute;
-  display: block;
-  bottom: -25px;
-  left: 0;
-  box-shadow: 18px 18px var(--dark-blue);
-  z-index: -2;
+.player-label {
+  font-family: var(--speech-font);
+  font-size: 0.65rem;
+  color: var(--dark-blue);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.action-label {
+  font-family: var(--speech-font);
+  font-size: 0.6rem;
+  color: var(--dark-blue);
+  font-weight: 700;
+  background-color: rgba(42, 118, 180, 0.15);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  margin-top: 0.1rem;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.winner-announcement,
+.draw-announcement {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.winner-badge {
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  border: 3px solid var(--dark-blue);
+  box-shadow: 0 4px 15px rgba(42, 118, 180, 0.4);
+}
+
+.winner-symbol {
+  font-family: var(--game-font);
+  font-size: 2rem;
+  color: var(--dark-purple);
+  font-weight: bold;
+}
+
+.winner-announcement h3,
+.draw-announcement h3 {
+  font-family: var(--speech-font);
+  font-size: 1.1rem;
+  color: var(--dark-purple);
+  font-weight: 700;
+  text-align: center;
 }
 
 @-webkit-keyframes float {
@@ -344,11 +477,6 @@ h1 {
     gap: 1rem;
   }
 
-  .game img {
-    max-width: 90vw;
-    min-width: 280px;
-  }
-
   .square {
     height: 5.5rem;
     width: 5.5rem;
@@ -357,44 +485,62 @@ h1 {
   }
 
   .game-information {
-    min-height: 350px;
+    min-height: 100px;
     width: 100%;
   }
 
-  .player-x,
-  .player-o {
-    font-size: 4.5vw;
-    padding: 0.75rem 2rem;
-    box-shadow: 10px 10px var(--dark-blue);
-    position: absolute;
+  .player-badge {
+    padding: 0.5rem 1rem;
   }
 
-  .player-x {
-    margin-left: 2rem;
-    margin-top: 1rem;
-    left: 0;
-    top: 0;
+  .player-symbol {
+    font-size: 2rem;
   }
 
-  .player-o {
-    margin-right: 2rem;
-    margin-top: 1rem;
-    right: 0;
-    left: auto;
-    top: 0;
+  .player-label {
+    font-size: 0.9rem;
   }
 
-  .player-x:after,
-  .player-o:after {
-    font-size: 12vw;
-    width: 40px;
-    bottom: -20px;
-    box-shadow: 12px 12px var(--dark-blue);
+  .turn-message {
+    font-size: 1.1rem;
+  }
+
+  .winner-symbol {
+    font-size: 2.5rem;
+  }
+
+  .winner-announcement h3,
+  .draw-announcement h3 {
+    font-size: 1.3rem;
   }
 
   .restart {
     padding: 0.5rem 2rem;
     font-size: 3.5vw;
+  }
+
+  .blocks-container {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    max-width: 90vw;
+  }
+
+  .blocks-container h4 {
+    font-size: 1.2rem;
+  }
+
+  .block {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .current-symbol-display p {
+    font-size: 1rem;
+  }
+
+  .current-symbol-display strong {
+    font-size: 1.2rem;
   }
 }
 
@@ -419,33 +565,59 @@ h1 {
   }
 
   .game-information {
-    min-height: 320px;
+    min-height: 90px;
   }
 
-  .player-x,
-  .player-o {
-    font-size: 5.5vw;
-    padding: 0.5rem 1.5rem;
-    box-shadow: 8px 8px var(--dark-blue);
+  .player-badge {
+    padding: 0.4rem 0.8rem;
   }
 
-  .player-x {
-    margin-left: 1rem;
+  .player-symbol {
+    font-size: 1.5rem;
   }
 
-  .player-o {
-    margin-right: 1rem;
+  .player-label {
+    font-size: 0.8rem;
   }
 
-  .player-x:after,
-  .player-o:after {
-    width: 30px;
-    bottom: -15px;
-    box-shadow: 8px 8px var(--dark-blue);
+  .turn-message {
+    font-size: 1rem;
+  }
+
+  .winner-symbol {
+    font-size: 2rem;
+  }
+
+  .winner-announcement h3,
+  .draw-announcement h3 {
+    font-size: 1.1rem;
   }
 
   .restart {
     padding: 0.5rem 1.5rem;
     font-size: 4vw;
+  }
+
+  .blocks-container {
+    margin-top: 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .blocks-container h4 {
+    font-size: 1rem;
+  }
+
+  .block {
+    width: 35px;
+    height: 35px;
+    font-size: 1rem;
+  }
+
+  .current-symbol-display p {
+    font-size: 0.9rem;
+  }
+
+  .current-symbol-display strong {
+    font-size: 1.1rem;
   }
 }

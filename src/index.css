@@ -101,24 +101,50 @@ main {
 .info-button {
   position: absolute;
   right: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid var(--white);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255,255,255,0.18);
   color: var(--white);
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
   padding: 0;
+  line-height: 0;
+}
+
+.info-button svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  stroke: rgba(255,255,255,0.95);
+}
+
+.info-icon {
+  font-family: var(--speech-font);
+  font-weight: 700;
+  color: var(--white);
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+  transform: translateY(-1px);
 }
 
 .info-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+
+.info-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(42,118,180,0.18);
+  transform: translateY(-50%) scale(1.02);
 }
 
 h1 {

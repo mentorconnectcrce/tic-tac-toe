@@ -1,6 +1,8 @@
-const GameInfo = ({ status, winner, xIsNext, currentSymbol, availableBlocks }) => {
+const GameInfo = ({ status, winner, xIsNext, currentSymbol, availableBlocks, gameMode, isComputerThinking }) => {
   const playerNumber = xIsNext ? '1' : '2'
   const currentPlayer = xIsNext ? 'X' : 'O'
+  const isComputerMode = gameMode === 'computer'
+  const player2Label = isComputerMode ? 'Computer' : 'Player 2'
   
   return (
     <section className="game-information">
@@ -15,9 +17,10 @@ const GameInfo = ({ status, winner, xIsNext, currentSymbol, availableBlocks }) =
             </div>
             <div className={`player-badge ${!xIsNext ? 'active' : ''}`}>
               <span className="player-symbol">{currentSymbol && !xIsNext ? currentSymbol : 'O'}</span>
-              <span className="player-label">Player 2</span>
-              {!xIsNext && !currentSymbol && <span className="action-label">Reveal!</span>}
-              {!xIsNext && currentSymbol && <span className="action-label">Place it!</span>}
+              <span className="player-label">{player2Label}</span>
+              {!xIsNext && !currentSymbol && !isComputerThinking && <span className="action-label">Reveal!</span>}
+              {!xIsNext && currentSymbol && !isComputerThinking && <span className="action-label">Place it!</span>}
+              {!xIsNext && isComputerThinking && <span className="action-label">Thinking...</span>}
             </div>
           </div>
         </div>
@@ -27,7 +30,7 @@ const GameInfo = ({ status, winner, xIsNext, currentSymbol, availableBlocks }) =
           <div className="winner-badge">
             <span className="winner-symbol">{status === 'Winner: X' ? 'X' : 'O'}</span>
           </div>
-          <h3>{status === 'Winner: X' ? '🎉 Player 1 Wins!' : '🎉 Player 2 Wins!'}</h3>
+          <h3>{status === 'Winner: X' ? '🎉 Player 1 Wins!' : `🎉 ${player2Label} Wins!`}</h3>
         </div>
       )}
       {!winner && availableBlocks === 0 && status === 'Draw!' && (

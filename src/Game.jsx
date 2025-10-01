@@ -3,10 +3,27 @@ import calculateWinner from './helpers/calculateWinner'
 import Board from './components/board/Board'
 import GameInfo from './components/game-info/GameInfo'
 import { triggerWinnerCelebration } from './utils/confetti'
+import { useLocation } from 'react-router-dom'
+
+// Wrapper to use hooks with class component
+import { useNavigate } from 'react-router-dom'
+
+const withRouter = (Component) => {
+  return (props) => {
+    const location = useLocation()
+    const navigate = useNavigate()
+    return <Component {...props} location={location} navigate={navigate} />
+  }
+}
 
 class Game extends React.Component {
   constructor(props) {
     super(props)
+    
+    // Detect game mode from URL params
+    const searchParams = new URLSearchParams(props.location?.search)
+    const gameMode = searchParams.get('mode') || 'friend' // 'friend' or 'computer'
+    
     // Generate 10 blocks with more strategic distribution (5 X and 5 O shuffled)
     const generateBalancedBlocks = () => {
       const blocks = ['X', 'X', 'X', 'X', 'X', 'O', 'O', 'O', 'O', 'O']
@@ -44,6 +61,8 @@ class Game extends React.Component {
       frontIndex: 0, // Next index to reveal from front
       backIndex: 9, // Next index to reveal from back
       showRules: !localStorage.getItem('rulesShown'), // Show rules on first visit
+      gameMode: gameMode, // 'friend' or 'computer'
+      isComputerThinking: false, // For computer mode
     }
   }
 
@@ -96,7 +115,96 @@ class Game extends React.Component {
       setTimeout(() => {
         triggerWinnerCelebration()
       }, 100)
+    } else if (this.state.gameMode === 'computer' && this.state.xIsNext) {
+      // After player (X/Player 1) places symbol, trigger computer move
+      // xIsNext will be false after setState, so we check before the toggle
+      setTimeout(() => this.computerRevealAndMove(), 800)
     }
+  }
+  
+  // Computer AI logic
+  computerRevealAndMove() {
+    if (this.state.isComputerThinking) return
+    
+    const { frontIndex, backIndex, fromFront, blocks } = this.state
+    
+    // Check if there are blocks left
+    if (frontIndex > backIndex) return
+    
+    this.setState({ isComputerThinking: true })
+    
+    // Computer reveals from back (Player 2 position)
+    setTimeout(() => {
+      this.handleBlockReveal(false)
+      
+      // After revealing, computer places the symbol
+      setTimeout(() => {
+        this.computerPlaceSymbol()
+      }, 600)
+    }, 400)
+  }
+  
+  computerPlaceSymbol() {
+    const history = this.state.history.slice(0, this.state.stepNumber + 1)
+    const current = history[history.length - 1]
+    const squares = current.squares.slice()
+    
+    if (!this.state.currentSymbol) {
+      this.setState({ isComputerThinking: false })
+      return
+    }
+    
+    // Find best move using minimax-like strategy
+    const bestMove = this.findBestMove(squares)
+    
+    if (bestMove !== -1) {
+      this.handleClick(bestMove)
+    }
+    
+    // Reset computer thinking state
+    this.setState({ isComputerThinking: false })
+  }
+  
+  findBestMove(squares) {
+    // Strategy: Try to win, block player from winning, or pick random
+    const availableMoves = squares.map((sq, idx) => sq === null ? idx : null).filter(idx => idx !== null)
+    
+    if (availableMoves.length === 0) return -1
+    
+    const symbol = this.state.currentSymbol
+    const opponentSymbol = symbol === 'X' ? 'O' : 'X'
+    
+    // 1. Check if computer can win
+    for (let move of availableMoves) {
+      const testSquares = [...squares]
+      testSquares[move] = symbol
+      if (calculateWinner(testSquares) === symbol) {
+        return move
+      }
+    }
+    
+    // 2. Block player from winning
+    for (let move of availableMoves) {
+      const testSquares = [...squares]
+      testSquares[move] = opponentSymbol
+      if (calculateWinner(testSquares) === opponentSymbol) {
+        return move
+      }
+    }
+    
+    // 3. Take center if available
+    if (squares[4] === null) {
+      return 4
+    }
+    
+    // 4. Take corners
+    const corners = [0, 2, 6, 8].filter(idx => squares[idx] === null)
+    if (corners.length > 0) {
+      return corners[Math.floor(Math.random() * corners.length)]
+    }
+    
+    // 5. Take any available move
+    return availableMoves[Math.floor(Math.random() * availableMoves.length)]
   }
   
   handleBlockReveal(isFromFront) {
@@ -166,6 +274,7 @@ class Game extends React.Component {
         currentSymbol: null,
         frontIndex: 0,
         backIndex: 9,
+        isComputerThinking: false,
       })
     } else {
       this.setState({
@@ -194,6 +303,7 @@ class Game extends React.Component {
     return (
       <React.Fragment>
         <div className="navbar">
+          <button className="back-button" onClick={() => this.props.navigate('/') } aria-label="Back to menu">←</button>
           <h1>TwistTacToe</h1>
           <button className="info-button" onClick={this.toggleRules} title="Game Rules" aria-label="Open game rules">
             <span className="info-icon">i</span>
@@ -255,6 +365,8 @@ class Game extends React.Component {
               xIsNext={this.state.xIsNext}
               currentSymbol={currentSymbol}
               availableBlocks={availableBlocks}
+              gameMode={this.state.gameMode}
+              isComputerThinking={this.state.isComputerThinking}
             />
             <Board
               squares={current.squares}
@@ -265,16 +377,18 @@ class Game extends React.Component {
           <div className="blocks-container">
             <h4>Hidden Blocks: {availableBlocks} remaining</h4>
             {/* Instruction text always present to reserve layout space; visibility toggled via CSS */}
-            <p className={`instruction-text ${(!currentSymbol && !winner && availableBlocks > 0) ? 'visible' : 'hidden'}`}>
-              {this.state.fromFront ?
-                'Click on the FIRST hidden block to reveal it!' :
-                'Click on the LAST hidden block to reveal it!'}
+            <p className={`instruction-text ${(!currentSymbol && !winner && availableBlocks > 0 && !this.state.isComputerThinking) ? 'visible' : 'hidden'}`}>
+              {this.state.gameMode === 'computer' && !this.state.xIsNext ?
+                'Computer is thinking...' :
+                this.state.fromFront ?
+                  'Click on the FIRST hidden block to reveal it!' :
+                  'Click on the LAST hidden block to reveal it!'}
             </p>
             <div className="blocks-deque">
               {this.state.blocks.map((block, index) => {
                 const isRevealed = this.state.revealedIndices.includes(index)
-                const isClickable = !isRevealed && !currentSymbol && !winner && 
-                  ((this.state.fromFront && index === this.state.frontIndex) || 
+                const isClickable = !isRevealed && !currentSymbol && !winner && !this.state.isComputerThinking &&
+                  ((this.state.fromFront && index === this.state.frontIndex) ||
                    (!this.state.fromFront && index === this.state.backIndex))
                 
                 return (
@@ -299,4 +413,4 @@ class Game extends React.Component {
   }
 }
 
-export default Game
+export default withRouter(Game)

@@ -89,12 +89,36 @@ main {
 .navbar {
   width: 100%;
   background-color: #16497c;
-  padding: 0.5rem 0;
+  padding: 0.5rem 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   border-bottom: 3px solid var(--dark-purple);
+}
+
+.info-button {
+  position: absolute;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--white);
+  color: var(--white);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.info-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
 }
 
 h1 {
@@ -157,11 +181,12 @@ h1 {
 }
 
 .blocks-deque {
-  display: flex;
-  gap: 0.2rem;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.3rem;
   justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 0.25rem;
+  max-width: 400px;
+  margin: 0 auto 0.25rem auto;
 }
 
 .block {
@@ -393,6 +418,128 @@ h1 {
   text-align: center;
 }
 
+.rules-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.rules-modal {
+  background: var(--white);
+  border-radius: 15px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.rules-modal h2 {
+  font-family: var(--game-font);
+  color: var(--dark-purple);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--dark-purple);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background: rgba(18, 22, 75, 0.1);
+  transform: rotate(90deg);
+}
+
+.rules-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rule-item {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.rule-number {
+  font-family: var(--game-font);
+  background: var(--dark-blue);
+  color: var(--white);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.rule-item h3 {
+  font-family: var(--speech-font);
+  color: var(--dark-purple);
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.rule-item p {
+  font-family: var(--speech-font);
+  color: var(--dark-blue);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sub-rule {
+  font-size: 0.85rem !important;
+  margin-left: 1rem !important;
+  margin-top: 0.3rem !important;
+  color: rgba(42, 118, 180, 0.8) !important;
+}
+
 @-webkit-keyframes float {
   0% {
     transform: translatey(0px);
@@ -529,18 +676,15 @@ h1 {
     font-size: 1.2rem;
   }
 
+  .blocks-deque {
+    max-width: 100%;
+    gap: 0.4rem;
+  }
+
   .block {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-
-  .current-symbol-display p {
-    font-size: 1rem;
-  }
-
-  .current-symbol-display strong {
-    font-size: 1.2rem;
+    width: 45px;
+    height: 45px;
+    font-size: 1.3rem;
   }
 }
 
@@ -550,7 +694,12 @@ h1 {
   }
 
   .navbar {
-    padding: 0.5rem 0;
+    padding: 0.5rem 1rem;
+  }
+
+  .info-button {
+    width: 32px;
+    height: 32px;
   }
 
   .game-container {
@@ -607,17 +756,30 @@ h1 {
     font-size: 1rem;
   }
 
+  .blocks-deque {
+    gap: 0.3rem;
+  }
+
   .block {
-    width: 35px;
-    height: 35px;
+    width: 38px;
+    height: 38px;
+    font-size: 1.1rem;
+  }
+
+  .rules-modal {
+    padding: 1.5rem;
+    max-height: 90vh;
+  }
+
+  .rules-modal h2 {
+    font-size: 1.5rem;
+  }
+
+  .rule-item h3 {
     font-size: 1rem;
   }
 
-  .current-symbol-display p {
+  .rule-item p {
     font-size: 0.9rem;
-  }
-
-  .current-symbol-display strong {
-    font-size: 1.1rem;
   }
 }

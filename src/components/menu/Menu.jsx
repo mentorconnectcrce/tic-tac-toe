@@ -6,11 +6,15 @@ const Menu = () => {
   const navigate = useNavigate()
 
   const handlePlayWithFriend = () => {
-    navigate('/twisttactoe?mode=friend')
+    navigate('/play?mode=friend')
   }
 
   const handlePlayWithComputer = () => {
-    navigate('/twisttactoe?mode=computer')
+    navigate('/play?mode=computer')
+  }
+
+  const handlePlayOnline = () => {
+    navigate('/online')
   }
 
   return (
@@ -33,6 +37,14 @@ const Menu = () => {
             <div className="button-text">
               <h3>Play with Computer</h3>
               <p>Challenge the AI opponent</p>
+            </div>
+          </button>
+
+          <button className="menu-button online-button" onClick={handlePlayOnline}>
+            <div className="button-icon">🌐</div>
+            <div className="button-text">
+              <h3>Play Online</h3>
+              <p>Connect with players anywhere</p>
             </div>
           </button>
         </div>

@@ -86,6 +86,9 @@ h6 {
 #root,
 #__next {
   isolation: isolate;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 main {
@@ -102,49 +105,70 @@ main {
 .navbar {
   width: 100%;
   background-color: #16497c;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 0.75rem; /* reduced vertical padding */
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
   border-bottom: 3px solid var(--dark-purple);
+  margin: 0;
+  height: 56px; /* fixed slightly smaller header height */
+}
+
+.navbar h1 {
+  color: var(--white);
+  font-size: 1.35rem; /* smaller title */
+  font-weight: 700;
+  margin: 0;
+  padding: 0;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.25);
+  line-height: 1;
 }
 
 .back-button {
   position: absolute;
-  left: 1rem;
+  left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   color: var(--white);
-  font-size: 1.2rem;
+  font-size: 1.15rem; /* slightly smaller */
+  font-weight: 700;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 7px;
+  transition: all 0.18s ease;
+  line-height: 1;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .back-button:hover {
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.2);
+  transform: translateY(-50%) scale(1.05);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .info-button {
   position: absolute;
-  right: 1rem;
+  right: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
   background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.24);
   color: var(--white);
-  width: 40px;
-  height: 40px;
+  width: 36px; /* slightly smaller */
+  height: 36px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
   padding: 0;
   line-height: 0;
   -webkit-tap-highlight-color: transparent;
@@ -162,7 +186,7 @@ main {
   font-family: var(--speech-font);
   font-weight: 700;
   color: var(--white);
-  font-size: 16px;
+  font-size: 13px; /* reduced */
   line-height: 1;
   display: inline-block;
   transform: translateY(-1px);
@@ -401,14 +425,92 @@ h1 {
   min-height: 50px;
   justify-content: center;
   padding: 0.3rem;
+  gap: 1rem;
 }
 
-.player-turn-indicator {
+.room-info-banner {
+  background: rgba(76, 175, 80, 0.1);
+  border: 2px solid rgba(76, 175, 80, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 400px;
+}
+
+.room-label {
+  font-family: var(--speech-font);
+  font-size: 0.9rem;
+  color: var(--dark-blue);
+  font-weight: 600;
+}
+
+.room-code-display {
+  font-family: var(--game-font);
+  font-size: 1.2rem;
+  color: var(--dark-purple);
+  letter-spacing: 0.2rem;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+}
+
+.disconnected-badge {
+  background: rgba(255, 0, 0, 0.2);
+  color: #d32f2f;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.win-counter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.win-score {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.3rem;
-  width: 100%;
+  gap: 0.1rem;
+}
+
+.score-label {
+  font-family: var(--speech-font);
+  font-size: 0.75rem;
+  color: var(--dark-blue);
+  font-weight: 600;
+}
+
+.score-value {
+  font-family: var(--game-font);
+  font-size: 1.4rem;
+  color: var(--dark-purple);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.win-divider {
+  font-family: var(--game-font);
+  font-size: 1.2rem;
+  color: var(--dark-blue);
+  font-weight: 700;
+}
+
+.player-turn-indicator {
+  margin-bottom: 1rem;
 }
 
 .player-badges {

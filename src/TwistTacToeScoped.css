@@ -1,0 +1,56 @@
+/* 
+ * TwistTacToe Scoped Styles Wrapper
+ * 
+ * This file wraps the game's styles to prevent conflicts with the main website.
+ * All game styles are scoped under .twisttactoe-game-wrapper
+ */
+
+.twisttactoe-game-wrapper {
+  /* Import game fonts only within this scope */
+  font-family: "Sofia Sans", sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Scope all game styles under the wrapper */
+.twisttactoe-game-wrapper main {
+  position: relative;
+  min-height: 100vh;
+  background-color: rgba(121, 185, 255, 255);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+}
+
+/* Reset styles within game wrapper to prevent conflicts */
+.twisttactoe-game-wrapper *,
+.twisttactoe-game-wrapper *::before,
+.twisttactoe-game-wrapper *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for readable content */
+.twisttactoe-game-wrapper p,
+.twisttactoe-game-wrapper h1,
+.twisttactoe-game-wrapper h2,
+.twisttactoe-game-wrapper h3,
+.twisttactoe-game-wrapper h4,
+.twisttactoe-game-wrapper h5,
+.twisttactoe-game-wrapper h6 {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}

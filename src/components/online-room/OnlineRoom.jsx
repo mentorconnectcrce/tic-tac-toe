@@ -4,8 +4,7 @@ import {
   PeerConnectionManager, 
   generateRoomCode, 
   isValidRoomCode,
-  copyToClipboard,
-  generateShareableLink
+  copyToClipboard
 } from '../../utils/onlineRoom';
 import './OnlineRoom.css';
 
@@ -18,9 +17,7 @@ const OnlineRoom = () => {
   const [inputCode, setInputCode] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('idle'); // 'idle', 'waiting', 'connected', 'error'
   const [errorMessage, setErrorMessage] = useState('');
-  const [peerManager, setPeerManager] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
-  const [isHost, setIsHost] = useState(false);
   
   // Use ref to always have latest peer manager reference
   const peerManagerRef = useRef(null);
@@ -41,7 +38,6 @@ const OnlineRoom = () => {
       handleConnectionChange,
       handleError
     );
-    setPeerManager(manager);
     peerManagerRef.current = manager;
     console.log('✅ Peer manager initialized:', manager);
 
@@ -76,11 +72,9 @@ const OnlineRoom = () => {
     
     if (status.status === 'waiting') {
       setConnectionStatus('waiting');
-      setIsHost(true);
       console.log('✅ Room created, waiting for guest...');
     } else if (status.status === 'connected') {
       setConnectionStatus('connected');
-      setIsHost(status.isHost);
       console.log('✅ Connected! Navigating to game...');
       
       // Navigate to game after short delay

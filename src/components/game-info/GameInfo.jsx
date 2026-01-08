@@ -15,8 +15,6 @@ const GameInfo = ({
   hostWins,
   guestWins
 }) => {
-  const playerNumber = xIsNext ? '1' : '2'
-  const currentPlayer = xIsNext ? 'X' : 'O'
   const isComputerMode = gameMode === 'computer'
   const isOnlineMode = gameMode === 'online'
   
@@ -34,7 +32,6 @@ const GameInfo = ({
   // The last move was made by the opposite of xIsNext (since xIsNext toggles after each move)
   const lastMoveByPlayer1 = !xIsNext // If it's now Player 2's turn, Player 1 made the last move
   const winnerLabel = lastMoveByPlayer1 ? player1Label : player2Label
-  const winnerIsPlayer1 = lastMoveByPlayer1
   
   // In online mode, determine if it's my turn
   const isMyTurn = isOnlineMode ? (isOnlineHost ? xIsNext : !xIsNext) : true

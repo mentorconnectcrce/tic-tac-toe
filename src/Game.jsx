@@ -25,27 +25,37 @@ class Game extends React.Component {
     const isHost = searchParams.get('host') === '1'
     const roomCode = searchParams.get('room') || null
     
-    // Generate 10 blocks with more strategic distribution (5 X and 5 O shuffled)
-    const generateBalancedBlocks = () => {
-      const blocks = ['X', 'X', 'X', 'X', 'X', 'O', 'O', 'O', 'O', 'O']
-      // Enhanced Fisher-Yates shuffle with multiple passes for better randomness
-      // Seed randomness with timestamp to ensure different patterns each game
-      const seed = Date.now() * Math.random()
+    // Initialize blocks for arrangement phase
+    // First block of each side is set by system (blocks[0] and blocks[5])
+    // Player 1 arranges blocks[6-9] (enemy's blocks 1-4)
+    // Player 2 arranges blocks[1-4] (enemy's blocks 1-4)
+    const initializeBlocksForArrangement = () => {
+      // System sets first block for each player - they must be different
+      const player1FirstBlock = Math.random() < 0.5 ? 'X' : 'O'
+      const player2FirstBlock = player1FirstBlock === 'X' ? 'O' : 'X'
       
-      // Perform multiple shuffle passes for truly random distribution
-      const shufflePasses = 3 + Math.floor(Math.random() * 3) // 3-5 passes
+      // Initialize all blocks - first block of each side is set, rest are null (to be arranged)
+      const blocks = [
+        player1FirstBlock, // index 0 - Player 1's first block (system set)
+        null, null, null, null, // indices 1-4 - Player 1's blocks (arranged by Player 2)
+        player2FirstBlock, // index 5 - Player 2's first block (system set)
+        null, null, null, null  // indices 6-9 - Player 2's blocks (arranged by Player 1)
+      ]
       
-      for (let pass = 0; pass < shufflePasses; pass++) {
-        for (let i = blocks.length - 1; i > 0; i--) {
-          // Use multiple random sources for better entropy
-          const randomFactor = Math.sin(seed + i + pass) * 10000
-          const j = Math.floor((Math.random() + Math.abs(randomFactor % 1)) / 2 * (i + 1))
-          ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
-        }
-      }
       return blocks
     }
-    const blocks = generateBalancedBlocks()
+    
+    const blocks = initializeBlocksForArrangement()
+    
+    // Generate pool of symbols for arrangement (4 of each per player to arrange)
+    const generateArrangementPool = () => {
+      return {
+        player1Pool: ['X', 'X', 'O', 'O'], // Player 1 will use these to arrange Player 2's blocks (indices 6-9)
+        player2Pool: ['X', 'X', 'O', 'O']  // Player 2 will use these to arrange Player 1's blocks (indices 1-4)
+      }
+    }
+    
+    const { player1Pool, player2Pool } = generateArrangementPool()
     
     this.state = {
       history: [
@@ -71,6 +81,15 @@ class Game extends React.Component {
       opponentConnected: true, // Whether opponent is connected
       hostWins: 0, // Track host wins in this room session
       guestWins: 0, // Track guest wins in this room session
+      // Block arrangement phase state
+      gamePhase: 'arrangement', // 'arrangement' or 'playing'
+      arrangementTurn: 1, // 1 = Player 1's turn to arrange, 2 = Player 2's turn
+      player1Pool: player1Pool, // Symbols Player 1 can place for Player 2
+      player2Pool: player2Pool, // Symbols Player 2 can place for Player 1
+      selectedSymbol: null, // Currently selected symbol to place
+      // Alternating first player - track who starts first in each game
+      player1StartsFirst: true, // Alternates each game
+      gamesPlayed: 0, // Track number of games to alternate starting player
     }
   }
 
@@ -164,6 +183,10 @@ class Game extends React.Component {
             backIndex: data.backIndex,
             hostWins: data.hostWins || 0,
             guestWins: data.guestWins || 0,
+            gamePhase: data.gamePhase || 'arrangement',
+            arrangementTurn: data.arrangementTurn || 1,
+            player1Pool: data.player1Pool || ['X', 'X', 'O', 'O'],
+            player2Pool: data.player2Pool || ['X', 'X', 'O', 'O'],
           })
         }
         break
@@ -183,19 +206,39 @@ class Game extends React.Component {
         this.applyOpponentMove(data.squareIndex)
         break
 
+      case 'block_arrangement':
+        // Opponent arranged blocks
+        this.setState({
+          blocks: data.blocks,
+          player1Pool: data.player1Pool,
+          player2Pool: data.player2Pool,
+          arrangementTurn: data.arrangementTurn,
+          gamePhase: data.gamePhase,
+          selectedSymbol: null,
+        })
+        break
+
       case 'game_restart':
         // Opponent restarted the game - apply immediately
+        const newP1StartsFirst = data.player1StartsFirst !== undefined ? data.player1StartsFirst : !this.state.player1StartsFirst
         this.setState({
           history: [{ squares: Array(9).fill(null) }],
           stepNumber: 0,
-          xIsNext: true,
+          xIsNext: newP1StartsFirst,
           blocks: data.blocks,
           revealedIndices: [],
-          fromFront: true,
+          fromFront: newP1StartsFirst,
           currentSymbol: null,
           frontIndex: 0,
           backIndex: 9,
           isWaitingForOpponent: false,
+          gamePhase: 'arrangement',
+          arrangementTurn: 1,
+          player1Pool: ['X', 'X', 'O', 'O'],
+          player2Pool: ['X', 'X', 'O', 'O'],
+          selectedSymbol: null,
+          player1StartsFirst: newP1StartsFirst,
+          gamesPlayed: data.gamesPlayed || this.state.gamesPlayed + 1,
         })
         break
 
@@ -241,6 +284,10 @@ class Game extends React.Component {
       backIndex: this.state.backIndex,
       hostWins: this.state.hostWins,
       guestWins: this.state.guestWins,
+      gamePhase: this.state.gamePhase,
+      arrangementTurn: this.state.arrangementTurn,
+      player1Pool: this.state.player1Pool,
+      player2Pool: this.state.player2Pool,
     })
   }
 
@@ -355,7 +402,7 @@ class Game extends React.Component {
   computerRevealAndMove() {
     if (this.state.isComputerThinking) return
     
-    const { frontIndex, backIndex, fromFront, blocks } = this.state
+    const { frontIndex, backIndex } = this.state
     
     // Check if there are blocks left
     if (frontIndex > backIndex) return
@@ -488,6 +535,125 @@ class Game extends React.Component {
     }
   }
 
+  // Block arrangement phase methods
+  selectSymbolFromPool = (symbol, poolIndex) => {
+    const { arrangementTurn, player1Pool, player2Pool, gameMode, isOnlineHost } = this.state
+    
+    // In online mode, check if it's this player's turn to arrange
+    if (gameMode === 'online') {
+      const isMyArrangementTurn = (isOnlineHost && arrangementTurn === 1) || (!isOnlineHost && arrangementTurn === 2)
+      if (!isMyArrangementTurn) return
+    }
+    
+    const pool = arrangementTurn === 1 ? player1Pool : player2Pool
+    if (pool[poolIndex] === null) return // Already used
+    
+    this.setState({ selectedSymbol: { symbol, poolIndex } })
+  }
+
+  placeBlockInArrangement = (blockIndex) => {
+    const { arrangementTurn, blocks, player1Pool, player2Pool, selectedSymbol, gameMode, isOnlineHost } = this.state
+    
+    if (!selectedSymbol) return
+    
+    // In online mode, check if it's this player's turn to arrange
+    if (gameMode === 'online') {
+      const isMyArrangementTurn = (isOnlineHost && arrangementTurn === 1) || (!isOnlineHost && arrangementTurn === 2)
+      if (!isMyArrangementTurn) return
+    }
+    
+    // Validate which blocks each player can place on
+    // Player 1 (arrangementTurn === 1) arranges blocks 6-9 (Player 2's blocks)
+    // Player 2 (arrangementTurn === 2) arranges blocks 1-4 (Player 1's blocks)
+    const validIndices = arrangementTurn === 1 ? [6, 7, 8, 9] : [1, 2, 3, 4]
+    
+    if (!validIndices.includes(blockIndex)) return
+    if (blocks[blockIndex] !== null) return // Already placed
+    
+    const newBlocks = [...blocks]
+    newBlocks[blockIndex] = selectedSymbol.symbol
+    
+    // Remove from pool
+    const newPool = arrangementTurn === 1 ? [...player1Pool] : [...player2Pool]
+    newPool[selectedSymbol.poolIndex] = null
+    
+    // Check if arrangement is complete
+    const remainingInPool = newPool.filter(s => s !== null).length
+    
+    let newArrangementTurn = arrangementTurn
+    let newGamePhase = 'arrangement'
+    
+    if (remainingInPool === 0) {
+      // Current player finished arranging
+      if (arrangementTurn === 1) {
+        newArrangementTurn = 2
+      } else {
+        // Both players done - start the game
+        newGamePhase = 'playing'
+      }
+    }
+    
+    const newState = {
+      blocks: newBlocks,
+      selectedSymbol: null,
+      gamePhase: newGamePhase,
+      arrangementTurn: newArrangementTurn,
+    }
+    
+    if (arrangementTurn === 1) {
+      newState.player1Pool = newPool
+    } else {
+      newState.player2Pool = newPool
+    }
+    
+    this.setState(newState)
+    
+    // Send arrangement to opponent in online mode
+    if (gameMode === 'online' && this.state.peerManager) {
+      this.state.peerManager.send({
+        type: 'block_arrangement',
+        blocks: newBlocks,
+        player1Pool: arrangementTurn === 1 ? newPool : player1Pool,
+        player2Pool: arrangementTurn === 2 ? newPool : player2Pool,
+        arrangementTurn: newArrangementTurn,
+        gamePhase: newGamePhase,
+      })
+    }
+  }
+
+  // Computer arranges blocks for Player 1
+  computerArrangeBlocks = () => {
+    if (this.state.gameMode !== 'computer' || this.state.arrangementTurn !== 2) return
+    
+    this.setState({ isComputerThinking: true })
+    
+    // Computer arranges blocks 1-4 for Player 1 in random order
+    const pool = [...this.state.player2Pool]
+    const newBlocks = [...this.state.blocks]
+    const indices = [1, 2, 3, 4]
+    
+    // Shuffle pool for random arrangement
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+    
+    // Place symbols
+    for (let i = 0; i < 4; i++) {
+      newBlocks[indices[i]] = pool[i]
+    }
+    
+    setTimeout(() => {
+      this.setState({
+        blocks: newBlocks,
+        player2Pool: [null, null, null, null],
+        gamePhase: 'playing',
+        arrangementTurn: 2,
+        isComputerThinking: false,
+      })
+    }, 1000)
+  }
+
   jumpTo(step) {
     console.log(step)
     // Reset the game completely
@@ -510,22 +676,24 @@ class Game extends React.Component {
         }
       }
       
-      const generateBalancedBlocks = () => {
-        const blocks = ['X', 'X', 'X', 'X', 'X', 'O', 'O', 'O', 'O', 'O']
-        // Enhanced Fisher-Yates shuffle with multiple passes for better randomness
-        const seed = Date.now() * Math.random()
-        const shufflePasses = 3 + Math.floor(Math.random() * 3)
+      // Alternate who starts first each game
+      const newGamesPlayed = this.state.gamesPlayed + 1
+      const newPlayer1StartsFirst = !this.state.player1StartsFirst
+      
+      // Initialize blocks for arrangement phase
+      const initializeBlocksForArrangement = () => {
+        const player1FirstBlock = Math.random() < 0.5 ? 'X' : 'O'
+        const player2FirstBlock = player1FirstBlock === 'X' ? 'O' : 'X'
         
-        for (let pass = 0; pass < shufflePasses; pass++) {
-          for (let i = blocks.length - 1; i > 0; i--) {
-            const randomFactor = Math.sin(seed + i + pass) * 10000
-            const j = Math.floor((Math.random() + Math.abs(randomFactor % 1)) / 2 * (i + 1))
-            ;[blocks[i], blocks[j]] = [blocks[j], blocks[i]]
-          }
-        }
-        return blocks
+        return [
+          player1FirstBlock,
+          null, null, null, null,
+          player2FirstBlock,
+          null, null, null, null
+        ]
       }
-      const blocks = generateBalancedBlocks()
+      
+      const blocks = initializeBlocksForArrangement()
       
       this.setState({
         history: [
@@ -534,10 +702,10 @@ class Game extends React.Component {
           },
         ],
         stepNumber: 0,
-        xIsNext: true,
+        xIsNext: newPlayer1StartsFirst, // Alternate who starts first
         blocks: blocks,
         revealedIndices: [],
-        fromFront: true,
+        fromFront: newPlayer1StartsFirst, // If Player 1 starts, reveal from front first
         currentSymbol: null,
         frontIndex: 0,
         backIndex: 9,
@@ -545,6 +713,15 @@ class Game extends React.Component {
         isWaitingForOpponent: false,
         hostWins: newHostWins,
         guestWins: newGuestWins,
+        // Reset arrangement phase
+        gamePhase: 'arrangement',
+        arrangementTurn: 1,
+        player1Pool: ['X', 'X', 'O', 'O'],
+        player2Pool: ['X', 'X', 'O', 'O'],
+        selectedSymbol: null,
+        // Track alternating start
+        player1StartsFirst: newPlayer1StartsFirst,
+        gamesPlayed: newGamesPlayed,
       })
 
       // Send restart message in online mode (only host can restart)
@@ -552,6 +729,8 @@ class Game extends React.Component {
         this.state.peerManager.send({
           type: 'game_restart',
           blocks: blocks,
+          player1StartsFirst: newPlayer1StartsFirst,
+          gamesPlayed: newGamesPlayed,
         })
         // Also send updated win counts
         this.state.peerManager.send({
@@ -574,11 +753,35 @@ class Game extends React.Component {
     const winner = calculateWinner(current.squares)
     const currentSymbol = this.state.currentSymbol
     const availableBlocks = (this.state.backIndex - this.state.frontIndex) + 1
+    const { gamePhase, arrangementTurn, player1Pool, player2Pool, selectedSymbol, gameMode, isOnlineHost } = this.state
+    
+    // Trigger computer arrangement when it's computer's turn
+    if (gameMode === 'computer' && gamePhase === 'arrangement' && arrangementTurn === 2 && !this.state.isComputerThinking) {
+      setTimeout(() => this.computerArrangeBlocks(), 500)
+    }
     
     let status
-    if (winner) {
+    // Check for draw: board is full with no winner, or no more blocks and no winner
+    const boardIsFull = current.squares.filter(s => s === null).length === 0
+    const noBlocksLeft = availableBlocks <= 0
+    const isDraw = !winner && (boardIsFull || noBlocksLeft)
+    
+    if (gamePhase === 'arrangement') {
+      if (gameMode === 'online') {
+        const isMyArrangementTurn = (isOnlineHost && arrangementTurn === 1) || (!isOnlineHost && arrangementTurn === 2)
+        status = isMyArrangementTurn 
+          ? `Your turn to arrange opponent's blocks!` 
+          : `Waiting for opponent to arrange...`
+      } else if (gameMode === 'computer') {
+        status = arrangementTurn === 1 
+          ? `Player 1: Arrange Computer's blocks!` 
+          : `Computer is arranging...`
+      } else {
+        status = `Player ${arrangementTurn}: Arrange opponent's blocks!`
+      }
+    } else if (winner) {
       status = 'Winner: ' + winner
-    } else if (availableBlocks <= 0 || (availableBlocks === 0 && current.squares.filter(s => s === null).length === 0)) {
+    } else if (isDraw) {
       status = 'Draw!'
     } else if (this.state.gameMode === 'online') {
       const isMyTurn = this.state.isOnlineHost ? this.state.xIsNext : !this.state.xIsNext
@@ -599,6 +802,12 @@ class Game extends React.Component {
     const buildBackUrl = () => {
       return '/'
     }
+
+    // Get current player's pool and target blocks for arrangement
+    const currentPool = arrangementTurn === 1 ? player1Pool : player2Pool
+    const isMyArrangementTurn = gameMode === 'online' 
+      ? ((isOnlineHost && arrangementTurn === 1) || (!isOnlineHost && arrangementTurn === 2))
+      : true
     
     return (
       <React.Fragment>
@@ -622,10 +831,20 @@ class Game extends React.Component {
               <h2>🎮 How to Play</h2>
               <div className="rules-content">
                 <div className="rule-item">
+                  <span className="rule-number">0</span>
+                  <div>
+                    <h3>Arrange Enemy's Blocks</h3>
+                    <p>Before the game starts, arrange your opponent's hidden blocks!</p>
+                    <p className="sub-rule">• System sets the first block for each player</p>
+                    <p className="sub-rule">• Player 1 arranges blocks for Player 2</p>
+                    <p className="sub-rule">• Player 2 arranges blocks for Player 1</p>
+                  </div>
+                </div>
+                <div className="rule-item">
                   <span className="rule-number">1</span>
                   <div>
                     <h3>Hidden Symbols</h3>
-                    <p>10 hidden blocks contain 5 X's and 5 O's shuffled randomly</p>
+                    <p>10 hidden blocks contain 5 X's and 5 O's arranged by players</p>
                   </div>
                 </div>
                 <div className="rule-item">
@@ -657,81 +876,200 @@ class Game extends React.Component {
             </div>
           </div>
         )}
+        
         <div className="game-container">
-          <section className="game">
-            <GameInfo
-              status={status}
-              winner={winner}
-              xIsNext={this.state.xIsNext}
-              currentSymbol={currentSymbol}
-              availableBlocks={availableBlocks}
-              gameMode={this.state.gameMode}
-              isComputerThinking={this.state.isComputerThinking}
-              history={history}
-              stepNumber={this.state.stepNumber}
-              isOnlineHost={this.state.isOnlineHost}
-              roomCode={this.state.roomCode}
-              isWaitingForOpponent={this.state.isWaitingForOpponent}
-              opponentConnected={this.state.opponentConnected}
-              hostWins={this.state.hostWins}
-              guestWins={this.state.guestWins}
-            />
-            <Board
-              squares={current.squares}
-              onClick={(i) => this.handleClick(i)}
-              jumpTo={(i) => this.jumpTo(i)}
-            />
-          </section>
-          <div className="blocks-container">
-            <h4>Hidden Blocks: {availableBlocks} remaining</h4>
-            {/* Instruction text always present to reserve layout space; visibility toggled via CSS */}
-            <p className={`instruction-text ${(!currentSymbol && !winner && availableBlocks > 0 && !this.state.isComputerThinking && !this.state.isWaitingForOpponent) ? 'visible' : 'hidden'}`}>
-              {this.state.gameMode === 'computer' && !this.state.xIsNext ?
-                'Computer is thinking...' :
-                this.state.gameMode === 'online' && !this.state.opponentConnected ?
-                  'Waiting for opponent to reconnect...' :
-                  this.state.gameMode === 'online' && this.state.isWaitingForOpponent ?
-                    "Waiting for opponent's move..." :
-                    this.state.gameMode === 'online' && ((this.state.isOnlineHost && !this.state.xIsNext) || (!this.state.isOnlineHost && this.state.xIsNext)) ?
-                      "Opponent is thinking..." :
-                      this.state.fromFront ?
-                        'Click on the FIRST hidden block to reveal it!' :
-                        'Click on the LAST hidden block to reveal it!'}
-            </p>
-            <div className="blocks-deque">
-              {this.state.blocks.map((block, index) => {
-                const isRevealed = this.state.revealedIndices.includes(index)
-                
-                // Determine if this block is clickable
-                let isClickable = false
-                if (!isRevealed && !currentSymbol && !winner && !this.state.isComputerThinking) {
-                  if (this.state.gameMode === 'online') {
-                    const isMyTurn = this.state.isOnlineHost ? this.state.xIsNext : !this.state.xIsNext
-                    isClickable = isMyTurn && !this.state.isWaitingForOpponent && this.state.opponentConnected &&
-                      ((this.state.fromFront && index === this.state.frontIndex) ||
-                       (!this.state.fromFront && index === this.state.backIndex))
-                  } else {
-                    isClickable = ((this.state.fromFront && index === this.state.frontIndex) ||
-                                   (!this.state.fromFront && index === this.state.backIndex))
-                  }
-                }
-                
-                return (
-                  <div 
-                    key={index} 
-                    className={`block ${isRevealed ? 'revealed' : 'hidden'} ${isClickable ? 'clickable' : ''}`}
-                    onClick={() => {
-                      if (isClickable) {
-                        this.handleBlockReveal(index === this.state.frontIndex)
-                      }
-                    }}
-                  >
-                    {isRevealed ? block : '?'}
+          {/* Arrangement Phase */}
+          {gamePhase === 'arrangement' && (
+            <div className="arrangement-phase">
+              <div className="arrangement-header">
+                <h2>🎯 Set Up {arrangementTurn === 1 ? "Player 2's" : "Player 1's"} Blocks</h2>
+                {gameMode === 'friend' && (
+                  <p className="pass-device-hint">
+                    ⚠️ {arrangementTurn === 1 ? "Player 2" : "Player 1"}, look away!
+                  </p>
+                )}
+                {gameMode === 'online' && !isMyArrangementTurn && (
+                  <p className="waiting-hint">⏳ Waiting for opponent...</p>
+                )}
+                {gameMode === 'computer' && arrangementTurn === 2 && (
+                  <p className="waiting-hint">🤖 Computer is arranging...</p>
+                )}
+              </div>
+              
+              {/* Symbol Pool - Draggable */}
+              {isMyArrangementTurn && !this.state.isComputerThinking && (
+                <div className="symbol-pool">
+                  <div className="pool-symbols">
+                    {currentPool.map((symbol, idx) => (
+                      symbol !== null && (
+                        <div 
+                          key={idx}
+                          className={`pool-symbol ${selectedSymbol?.poolIndex === idx ? 'selected' : ''}`}
+                          draggable="true"
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('symbol', symbol)
+                            e.dataTransfer.setData('poolIndex', idx.toString())
+                            this.selectSymbolFromPool(symbol, idx)
+                          }}
+                          onClick={() => this.selectSymbolFromPool(symbol, idx)}
+                        >
+                          {symbol}
+                        </div>
+                      )
+                    ))}
                   </div>
-                )
-              })}
+                </div>
+              )}
+              
+              {/* Arrangement Blocks Display - Show only the opponent's blocks */}
+              <div className="arrangement-blocks-display">
+                {/* Player 1 arranges Player 2's blocks (indices 5-9) */}
+                {arrangementTurn === 1 && (
+                  <div className="arrangement-side single-row">
+                    <div className="arrangement-blocks">
+                      {[5, 6, 7, 8, 9].map((idx) => {
+                        const block = this.state.blocks[idx]
+                        const isSystemSet = idx === 5
+                        const isTargetable = !isSystemSet && block === null && isMyArrangementTurn && selectedSymbol
+                        const shouldShowSymbol = block !== null && !isSystemSet
+                        
+                        return (
+                          <div 
+                            key={idx}
+                            className={`arrangement-block ${block !== null && !isSystemSet ? 'filled' : 'empty'} ${isSystemSet ? 'system-set' : ''} ${isTargetable ? 'targetable' : ''}`}
+                            onClick={() => isTargetable && this.placeBlockInArrangement(idx)}
+                            onDragOver={(e) => isTargetable && e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              if (isTargetable) {
+                                this.placeBlockInArrangement(idx)
+                              }
+                            }}
+                          >
+                            {isSystemSet ? '🔒' : (shouldShowSymbol ? block : '')}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <p className="reveal-direction">← Player 2 reveals from here</p>
+                  </div>
+                )}
+                
+                {/* Player 2 arranges Player 1's blocks (indices 0-4) */}
+                {arrangementTurn === 2 && (
+                  <div className="arrangement-side single-row">
+                    <div className="arrangement-blocks">
+                      {[0, 1, 2, 3, 4].map((idx) => {
+                        const block = this.state.blocks[idx]
+                        const isSystemSet = idx === 0
+                        const isTargetable = !isSystemSet && block === null && isMyArrangementTurn && selectedSymbol
+                        const shouldShowSymbol = block !== null && !isSystemSet
+                        
+                        return (
+                          <div 
+                            key={idx}
+                            className={`arrangement-block ${block !== null && !isSystemSet ? 'filled' : 'empty'} ${isSystemSet ? 'system-set' : ''} ${isTargetable ? 'targetable' : ''}`}
+                            onClick={() => isTargetable && this.placeBlockInArrangement(idx)}
+                            onDragOver={(e) => isTargetable && e.preventDefault()}
+                            onDrop={(e) => {
+                              e.preventDefault()
+                              if (isTargetable) {
+                                this.placeBlockInArrangement(idx)
+                              }
+                            }}
+                          >
+                            {isSystemSet ? '🔒' : (shouldShowSymbol ? block : '')}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <p className="reveal-direction">Player 1 reveals from here →</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+          
+          {/* Playing Phase */}
+          {gamePhase === 'playing' && (
+            <>
+              <section className="game">
+                <GameInfo
+                  status={status}
+                  winner={winner}
+                  xIsNext={this.state.xIsNext}
+                  currentSymbol={currentSymbol}
+                  availableBlocks={availableBlocks}
+                  gameMode={this.state.gameMode}
+                  isComputerThinking={this.state.isComputerThinking}
+                  history={history}
+                  stepNumber={this.state.stepNumber}
+                  isOnlineHost={this.state.isOnlineHost}
+                  roomCode={this.state.roomCode}
+                  isWaitingForOpponent={this.state.isWaitingForOpponent}
+                  opponentConnected={this.state.opponentConnected}
+                  hostWins={this.state.hostWins}
+                  guestWins={this.state.guestWins}
+                />
+                <Board
+                  squares={current.squares}
+                  onClick={(i) => this.handleClick(i)}
+                  jumpTo={(i) => this.jumpTo(i)}
+                  gameOver={winner || isDraw}
+                />
+              </section>
+              <div className="blocks-container">
+                <h4>Hidden Blocks: {availableBlocks} remaining</h4>
+                {/* Instruction text always present to reserve layout space; visibility toggled via CSS */}
+                <p className={`instruction-text ${(!currentSymbol && !winner && availableBlocks > 0 && !this.state.isComputerThinking && !this.state.isWaitingForOpponent) ? 'visible' : 'hidden'}`}>
+                  {this.state.gameMode === 'computer' && !this.state.xIsNext ?
+                    'Computer is thinking...' :
+                    this.state.gameMode === 'online' && !this.state.opponentConnected ?
+                      'Waiting for opponent to reconnect...' :
+                      this.state.gameMode === 'online' && this.state.isWaitingForOpponent ?
+                        "Waiting for opponent's move..." :
+                        this.state.gameMode === 'online' && ((this.state.isOnlineHost && !this.state.xIsNext) || (!this.state.isOnlineHost && this.state.xIsNext)) ?
+                          "Opponent is thinking..." :
+                          this.state.fromFront ?
+                            'Click on the FIRST hidden block to reveal it!' :
+                            'Click on the LAST hidden block to reveal it!'}
+                </p>
+                <div className="blocks-deque">
+                  {this.state.blocks.map((block, index) => {
+                    const isRevealed = this.state.revealedIndices.includes(index)
+                    
+                    // Determine if this block is clickable
+                    let isClickable = false
+                    if (!isRevealed && !currentSymbol && !winner && !this.state.isComputerThinking) {
+                      if (this.state.gameMode === 'online') {
+                        const isMyTurn = this.state.isOnlineHost ? this.state.xIsNext : !this.state.xIsNext
+                        isClickable = isMyTurn && !this.state.isWaitingForOpponent && this.state.opponentConnected &&
+                          ((this.state.fromFront && index === this.state.frontIndex) ||
+                           (!this.state.fromFront && index === this.state.backIndex))
+                      } else {
+                        isClickable = ((this.state.fromFront && index === this.state.frontIndex) ||
+                                       (!this.state.fromFront && index === this.state.backIndex))
+                      }
+                    }
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`block ${isRevealed ? 'revealed' : 'hidden'} ${isClickable ? 'clickable' : ''}`}
+                        onClick={() => {
+                          if (isClickable) {
+                            this.handleBlockReveal(index === this.state.frontIndex)
+                          }
+                        }}
+                      >
+                        {isRevealed ? block : '?'}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </React.Fragment>
     )

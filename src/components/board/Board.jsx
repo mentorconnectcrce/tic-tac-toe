@@ -1,6 +1,6 @@
 import Square from '../square/Square.jsx'
 
-const Board = ({ squares, onClick, jumpTo }) => {
+const Board = ({ squares, onClick, jumpTo, gameOver }) => {
   const renderSquare = (i) => {
     return <Square value={squares[i]} onClick={() => onClick(i)} />
   }
@@ -23,9 +23,11 @@ const Board = ({ squares, onClick, jumpTo }) => {
           {renderSquare(8)}
         </section>
       </section>
-      <button className="restart" onClick={() => jumpTo(0)}>
-        Restart the game
-      </button>
+      {gameOver && (
+        <button className="restart" onClick={() => jumpTo(0)}>
+          Restart the game
+        </button>
+      )}
     </section>
   )
 }

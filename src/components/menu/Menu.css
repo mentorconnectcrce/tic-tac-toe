@@ -127,8 +127,13 @@
 }
 
 @media screen and (max-width: 600px) {
+  .menu-container {
+    padding: 1rem;
+  }
+
   .menu-content {
     padding: 2rem 1.5rem;
+    margin: 0 auto;
   }
 
   .menu-title {

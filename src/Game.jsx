@@ -15,101 +15,110 @@ const withRouter = (Component) => {
   }
 }
 
-class Game extends React.Component {
-  constructor(props) {
-    super(props)
-    
-    // Detect game mode from URL params
-    const searchParams = new URLSearchParams(props.location?.search)
-    const gameMode = searchParams.get('mode') || 'friend' // 'friend', 'computer', or 'online'
-    const isHost = searchParams.get('host') === '1'
-    const roomCode = searchParams.get('room') || null
-    
-    // Initialize blocks for arrangement phase
-    // First block of each side is set by system (blocks[0] and blocks[5])
-    // Player 1 arranges blocks[6-9] (enemy's blocks 1-4)
-    // Player 2 arranges blocks[1-4] (enemy's blocks 1-4)
-    const initializeBlocksForArrangement = () => {
-      // System sets first block for each player - they must be different
-      const player1FirstBlock = Math.random() < 0.5 ? 'X' : 'O'
-      const player2FirstBlock = player1FirstBlock === 'X' ? 'O' : 'X'
-      
-      // Initialize all blocks - first block of each side is set, rest are null (to be arranged)
-      const blocks = [
-        player1FirstBlock, // index 0 - Player 1's first block (system set)
-        null, null, null, null, // indices 1-4 - Player 1's blocks (arranged by Player 2)
-        player2FirstBlock, // index 5 - Player 2's first block (system set)
-        null, null, null, null  // indices 6-9 - Player 2's blocks (arranged by Player 1)
-      ]
-      
-      return blocks
-    }
-    
-    const blocks = initializeBlocksForArrangement()
-    
-    // Generate pool of symbols for arrangement (4 of each per player to arrange)
-    const generateArrangementPool = () => {
-      return {
-        player1Pool: ['X', 'X', 'O', 'O'], // Player 1 will use these to arrange Player 2's blocks (indices 6-9)
-        player2Pool: ['X', 'X', 'O', 'O']  // Player 2 will use these to arrange Player 1's blocks (indices 1-4)
-      }
-    }
-    
-    const { player1Pool, player2Pool } = generateArrangementPool()
-    
-    this.state = {
-      history: [
-        {
-          squares: Array(9).fill(null),
-        },
-      ],
-      stepNumber: 0,
-      xIsNext: true,
-      blocks: blocks, // All 10 blocks
-      revealedIndices: [], // Track which indices have been revealed
-      fromFront: true, // Alternates: true = reveal from front, false = reveal from back
-      currentSymbol: null, // The symbol revealed for current turn
-      frontIndex: 0, // Next index to reveal from front
-      backIndex: 9, // Next index to reveal from back
-      showRules: !localStorage.getItem('rulesShown'), // Show rules on first visit
-      gameMode: gameMode, // 'friend', 'computer', or 'online'
-      isComputerThinking: false, // For computer mode
-      isOnlineHost: isHost, // Whether this player is the host (Player 1) in online mode
-      roomCode: roomCode, // Room code for online mode
-      peerManager: null, // PeerJS connection manager
-      isWaitingForOpponent: false, // Waiting for opponent's move in online mode
-      opponentConnected: true, // Whether opponent is connected
-      hostWins: 0, // Track host wins in this room session
-      guestWins: 0, // Track guest wins in this room session
-      // Block arrangement phase state
-      gamePhase: 'arrangement', // 'arrangement' or 'playing'
-      arrangementTurn: 1, // 1 = Player 1's turn to arrange, 2 = Player 2's turn
-      player1Pool: player1Pool, // Symbols Player 1 can place for Player 2
-      player2Pool: player2Pool, // Symbols Player 2 can place for Player 1
-      selectedSymbol: null, // Currently selected symbol to place
-      // Alternating first player - track who starts first in each game
-      player1StartsFirst: true, // Alternates each game
-      gamesPlayed: 0, // Track number of games to alternate starting player
-    }
-  }
-
-  componentDidMount() {
-    // Mark that rules have been shown
-    if (this.state.showRules) {
-      localStorage.setItem('rulesShown', 'true')
-    }
-
-    // Setup online multiplayer if in online mode
-    if (this.state.gameMode === 'online') {
-      // Minimal delay to ensure peer manager is available
-      setTimeout(() => {
-        this.setupOnlineMultiplayer()
-      }, 50)
-    }
-  }
-
-  componentWillUnmount() {
-    // Don't cleanup peer connection when component unmounts
+              {gameMode === 'online' && !isMyArrangementTurn ? (
+                <div className="arrangement-wait-card">
+                  <p className="waiting-hint">Opponent is arranging your blocks...</p>
+                  <p className="waiting-subhint">You will see them after setup is done.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Symbol Pool - Draggable */}
+                  {isMyArrangementTurn && !this.state.isComputerThinking && (
+                    <div className="symbol-pool">
+                      <div className="pool-symbols">
+                        {currentPool.map((symbol, idx) => (
+                          symbol !== null && (
+                            <div 
+                              key={idx}
+                              className={`pool-symbol ${selectedSymbol?.poolIndex === idx ? 'selected' : ''}`}
+                              draggable="true"
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('symbol', symbol)
+                                e.dataTransfer.setData('poolIndex', idx.toString())
+                                this.selectSymbolFromPool(symbol, idx)
+                              }}
+                              onClick={() => this.selectSymbolFromPool(symbol, idx)}
+                            >
+                              {symbol}
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Arrangement Blocks Display - Show only the opponent's blocks */}
+                  <div className="arrangement-blocks-display">
+                    {/* Player 1 arranges Player 2's blocks (indices 5-9) */}
+                    {arrangementTurn === 1 && (
+                      <div className="arrangement-side single-row">
+                        <div className="arrangement-blocks">
+                          {[5, 6, 7, 8, 9].map((idx) => {
+                            const block = this.state.blocks[idx]
+                            const isSystemSet = idx === 5
+                            const isTargetable = !isSystemSet && block === null && isMyArrangementTurn && selectedSymbol
+                            const shouldShowSymbol = block !== null && !isSystemSet
+                            
+                            return (
+                              <div 
+                                key={idx}
+                                className={`arrangement-block ${block !== null && !isSystemSet ? 'filled' : 'empty'} ${isSystemSet ? 'system-set' : ''} ${isTargetable ? 'targetable' : ''}`}
+                                onClick={() => isTargetable && this.placeBlockInArrangement(idx)}
+                                onDragOver={(e) => isTargetable && e.preventDefault()}
+                                onDrop={(e) => {
+                                  e.preventDefault()
+                                  if (isTargetable) {
+                                    this.placeBlockInArrangement(idx)
+                                  }
+                                }}
+                              >
+                                {isSystemSet ? '🔒' : (shouldShowSymbol ? block : '')}
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <p className="reveal-direction">← Player 2 reveals from here</p>
+                      </div>
+                    )}
+                    
+                    {/* Player 2 arranges Player 1's blocks (indices 0-4) */}
+                    {arrangementTurn === 2 && (
+                      <div className="arrangement-side single-row">
+                        <div className="arrangement-blocks">
+                          {[0, 1, 2, 3, 4].map((idx) => {
+                            const block = this.state.blocks[idx]
+                            const isSystemSet = idx === 0
+                            const isTargetable = !isSystemSet && block === null && isMyArrangementTurn && selectedSymbol
+                            const shouldShowSymbol = block !== null && !isSystemSet
+                            
+                            return (
+                              <div 
+                                key={idx}
+                                className={`arrangement-block ${block !== null && !isSystemSet ? 'filled' : 'empty'} ${isSystemSet ? 'system-set' : ''} ${isTargetable ? 'targetable' : ''}`}
+                                onClick={() => isTargetable && this.placeBlockInArrangement(idx)}
+                                onDragOver={(e) => isTargetable && e.preventDefault()}
+                                onDrop={(e) => {
+                                  e.preventDefault()
+                                  if (isTargetable) {
+                                    this.placeBlockInArrangement(idx)
+                                  }
+                                }}
+                              >
+                                {isSystemSet ? '🔒' : (shouldShowSymbol ? block : '')}
+                              </div>
+                            )
+                          })}
+                        </div>
+                        <p className="reveal-direction">Player 1 reveals from here →</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {this.state.isComputerThinking && (
+                    <p className="computer-thinking">🤖 Computer is arranging blocks...</p>
+                  )}
+                </>
+              )}
     // Let user explicitly disconnect or close browser
     // This prevents disconnection when navigating between game pages
     console.log('🎮 Game component unmounting - keeping peer connection alive')

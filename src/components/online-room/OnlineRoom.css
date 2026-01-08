@@ -17,10 +17,10 @@
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 0.75rem 1.5rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 12px;
   transition: all 0.3s ease;
   z-index: 10;
@@ -146,14 +146,15 @@
 
 .code-value {
   font-family: var(--game-font, "Seymour One", sans-serif);
-  font-size: 3rem;
+  font-size: 2.2rem;
   color: var(--dark-purple, rgb(18, 22, 75));
-  letter-spacing: 0.5rem;
-  padding: 1rem;
+  letter-spacing: 0.3rem;
+  padding: 0.75rem;
   background: rgba(121, 185, 255, 0.2);
-  border-radius: 16px;
+  border-radius: 12px;
   border: 3px dashed var(--dark-blue, rgb(42, 118, 180));
   animation: pulse 2s ease-in-out infinite;
+  word-break: break-all;
 }
 
 @keyframes pulse {
@@ -199,9 +200,9 @@
 
 .room-code-input {
   font-family: var(--game-font, "Seymour One", sans-serif);
-  font-size: 2rem;
+  font-size: 1.5rem;
   text-align: center;
-  letter-spacing: 0.5rem;
+  letter-spacing: 0.3rem;
   padding: 1rem;
   border: 3px solid var(--dark-blue, rgb(42, 118, 180));
   border-radius: 12px;
@@ -209,6 +210,9 @@
   background: rgba(121, 185, 255, 0.1);
   color: var(--dark-purple, rgb(18, 22, 75));
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+  box-sizing: border-box;
 }
 
 .room-code-input:focus {
@@ -398,25 +402,27 @@
 
 /* Mobile responsiveness */
 @media screen and (max-width: 600px) {
+  .online-room-container {
+    padding: 0.5rem;
+  }
+
   .online-room-content {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
+    border-radius: 16px;
   }
 
   .online-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
+    line-height: 1.2;
   }
 
   .online-subtitle {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .online-option-button {
-    padding: 1.2rem;
-    gap: 1rem;
-  }
-
-  .online-option-button .button-icon {
-    font-size: 2rem;
+    padding: 1rem;
+    gap: 0.75rem;
   }
 
   .online-option-button h3 {
@@ -428,57 +434,90 @@
   }
 
   .code-value {
-    font-size: 2.5rem;
-    letter-spacing: 0.3rem;
-    padding: 0.75rem;
-  }
-
-  .share-button {
-    font-size: 0.95rem;
-    padding: 0.9rem;
+    font-size: 1.8rem;
+    letter-spacing: 0.2rem;
+    padding: 0.6rem;
+    border-radius: 10px;
   }
 
   .room-code-input {
-    font-size: 1.5rem;
-    padding: 0.9rem;
+    font-size: 1.3rem;
+    letter-spacing: 0.2rem;
+    padding: 0.85rem;
+    max-width: 100%;
   }
 
-  .join-button-submit {
-    font-size: 1rem;
-    padding: 0.9rem;
+  .join-button-submit,
+  .share-button {
+    font-size: 0.9rem;
+    padding: 1rem;
   }
 
   .back-button-online {
-    font-size: 1rem;
-    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    top: 1rem;
+    left: 1rem;
   }
 }
 
 @media screen and (max-width: 400px) {
+  .online-room-container {
+    padding: 0.25rem;
+  }
+
   .online-room-content {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.75rem;
+    border-radius: 12px;
   }
 
   .online-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .online-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
   }
 
   .online-option-button {
-    flex-direction: column;
-    text-align: center;
-    padding: 1rem;
+    padding: 0.85rem;
+    gap: 0.5rem;
   }
 
-  .online-option-button .button-text {
-    text-align: center;
+  .online-option-button .button-icon {
+    font-size: 1.5rem;
+  }
+
+  .online-option-button h3 {
+    font-size: 1rem;
+  }
+
+  .online-option-button p {
+    font-size: 0.75rem;
   }
 
   .code-value {
-    font-size: 2rem;
-    letter-spacing: 0.2rem;
+    font-size: 1.5rem;
+    letter-spacing: 0.15rem;
+    padding: 0.5rem;
+  }
+
+  .room-code-input {
+    font-size: 1.1rem;
+    letter-spacing: 0.15rem;
+    padding: 0.75rem;
+  }
+
+  .join-button-submit,
+  .share-button {
+    font-size: 0.8rem;
+    padding: 0.85rem;
+  }
+
+  .back-button-online {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.85rem;
+    top: 0.75rem;
+    left: 0.75rem;
   }
 }

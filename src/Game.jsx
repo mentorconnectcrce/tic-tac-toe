@@ -863,10 +863,11 @@ class Game extends React.Component {
                   {/* Arrangement Blocks Display - Show only the opponent's blocks */}
                   <div className="arrangement-blocks-display">
                     {/* Player 1 arranges Player 2's blocks (indices 5-9) */}
+                    {/* Display in reverse order: 9,8,7,6,5 - because Player 2 reveals from index 9 (last) */}
                     {arrangementTurn === 1 && (
                       <div className="arrangement-side single-row">
                         <div className="arrangement-blocks">
-                          {[5, 6, 7, 8, 9].map((idx) => {
+                          {[9, 8, 7, 6, 5].map((idx) => {
                             const block = this.state.blocks[idx]
                             const isSystemSet = idx === 5
                             const isTargetable = !isSystemSet && block === null && isMyArrangementTurn && selectedSymbol
@@ -890,7 +891,7 @@ class Game extends React.Component {
                             )
                           })}
                         </div>
-                        <p className="reveal-direction">← Player 2 reveals from here</p>
+                        <p className="reveal-direction">Player 2 reveals from here →</p>
                       </div>
                     )}
                     

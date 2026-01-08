@@ -56,7 +56,9 @@ const OnlineRoom = () => {
         manager.disconnect();
       }
     };
-  }, []); // Empty dependency array - only run once
+  // Deliberately run once; handlers are stable enough for this screen
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleIncomingMessage = (data) => {
     console.log('Received message:', data);
